@@ -188,6 +188,12 @@ enum opcodetype
     OP_WINNER_COMMENT = 0xc2,
     OP_WINNER_COMMENT_REFERRAL = 0xc3,
 
+    // Pocketnet transaction types
+    OP_TXTYPE_ACCOUNTUSER = 0x3e8,
+    OP_TXTYPE_ACCOUNT_VIDEO_SERVER = 0x3e9,
+    OP_TXTYPE_ACCOUNT_MESSAGE_SERVER = 0X3ea,
+    // ...
+
     OP_INVALIDOPCODE = 0xff,
 };
 
