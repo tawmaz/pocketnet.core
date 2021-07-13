@@ -2958,6 +2958,11 @@ void CChainState::NotifyWSClients(const CBlock& block, CBlockIndex* blockIndex)
                                     {"answerid", itmS["answerid"].As<string>()},
                                     {"reason", "post"},
                                 };
+                                if (optype == "comment"){
+                                    int donation = getdonationamount(txid);
+                                    cFields["donation"] = "true";
+                                    cFields["amount"] = donation;
+                                }
 
                                 PrepareWSMessage(messages, "event", itmP["address"].As<string>(), itmS["otxid"].As<string>(), txtime, cFields);
                             }

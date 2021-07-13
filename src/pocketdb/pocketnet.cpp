@@ -640,6 +640,29 @@ int getcontenttype(std::string type)
     else return ContentType::ContentNotSupported;
 }
 
+int64_t getdonationamount(std::string txid)
+{
+    int amount = 0;
+    CTransactionRef tx;
+    uint256 hash_block;
+    uint256 hash_tx;
+    hash_tx.SetHex(txid);
+    if(g_txindex->FindTx(hash_tx, hash_block, tx)){
+        RTransaction rtx(tx);
+        for (const auto& item : rtx->vout){
+            CTxDestination destAddress;
+            if(ExtractDestination(item.scriptPubKey, destAddress)){
+                std::string encoded_address = EncodeDestination(destAddress);
+                if (rtx.Address != encoded_address) {
+                    amount += item.nValue;
+                }
+            }
+        }
+    }
+
+    return amount;
+}
+
 /*
 void FindHierarchicalTxIds(int height)
 {
