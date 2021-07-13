@@ -2959,7 +2959,7 @@ void CChainState::NotifyWSClients(const CBlock& block, CBlockIndex* blockIndex)
                                     {"reason", "post"},
                                 };
                                 if (optype == "comment"){
-                                    int donation = getdonationamount(txid);
+                                    int64_t donation = getdonationamount(txid);
                                     cFields["donation"] = "true";
                                     cFields["amount"] = donation;
                                 }

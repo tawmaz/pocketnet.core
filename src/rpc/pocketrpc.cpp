@@ -2363,6 +2363,10 @@ UniValue getcomments(const JSONRPCRequest& request)
         oCmnt.pushKV("myScore", myScore);
         oCmnt.pushKV("children", std::to_string(g_pocketdb->SelectCount(Query("Comment").Where("parentid", CondEq, cmntItm["otxid"].As<string>()).Where("last", CondEq, true))));
 
+        int64_t donation = getdonationamount(cmntItm["otxid"].As<string>());
+        oCmnt.pushKV("donation", "true");
+        oCmnt.pushKV("amount", donation);
+
         aResult.push_back(oCmnt);
     }
 
@@ -2430,6 +2434,10 @@ UniValue getlastcomments(const JSONRPCRequest& request)
             oCmnt.pushKV("reputation", cmntItm["reputation"].As<string>());
             oCmnt.pushKV("edit", cmntItm["otxid"].As<string>() != cmntItm["txid"].As<string>());
             oCmnt.pushKV("deleted", cmntItm["msg"].As<string>() == "");
+
+            int64_t donation = getdonationamount(cmntItm["otxid"].As<string>());
+            oCmnt.pushKV("donation", "true");
+            oCmnt.pushKV("amount", donation);
 
             aResult.push_back(oCmnt);
         }

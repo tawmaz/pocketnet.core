@@ -649,12 +649,15 @@ int64_t getdonationamount(std::string txid)
     hash_tx.SetHex(txid);
     if(g_txindex->FindTx(hash_tx, hash_block, tx)){
         RTransaction rtx(tx);
-        for (const auto& item : rtx->vout){
-            CTxDestination destAddress;
-            if(ExtractDestination(item.scriptPubKey, destAddress)){
-                std::string encoded_address = EncodeDestination(destAddress);
-                if (rtx.Address != encoded_address) {
-                    amount += item.nValue;
+        std::string address_source = "";
+        if (GetInputAddress(tx->vin[0].prevout.hash, tx->vin[0].prevout.n, address_source)) {
+            for (const auto& item : rtx->vout) {
+                CTxDestination destAddress;
+                if (ExtractDestination(item.scriptPubKey, destAddress)) {
+                    std::string encoded_address = EncodeDestination(destAddress);
+                    if (address_source != encoded_address) {
+                        amount += item.nValue;
+                    }
                 }
             }
         }
