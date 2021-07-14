@@ -317,6 +317,10 @@ UniValue getPostData(reindexer::Item& itm, std::string address)
         oCmnt.pushKV("myScore", myScore);
         oCmnt.pushKV("children", std::to_string(g_pocketdb->SelectCount(Query("Comment").Where("parentid", CondEq, cmntItm["otxid"].As<string>()).Where("last", CondEq, true))));
 
+        int64_t donation = getdonationamount(cmntItm["otxid"].As<string>());
+        oCmnt.pushKV("donation", "true");
+        oCmnt.pushKV("amount", donation);
+
         entry.pushKV("lastComment", oCmnt);
     }
 
