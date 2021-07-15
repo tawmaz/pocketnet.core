@@ -3846,60 +3846,17 @@ UniValue debug(const JSONRPCRequest& request)
 {
     UniValue result(UniValue::VOBJ);
 
-    std::string txid1 = "99f61ecd0c52038d1c034ce808b2f162f5b5a72e87429739535a14bdecb0ee43"; //PoS
-    std::string txid2 = "1ef10063aa8c52d3c1b154ee395c790a933c2426e3f83cc628d8db5a90f3c838"; //Score to Post
-
-    std::string txid3 = "";
+    std::string txid = "";
     if (request.params.size() > 0) {
-        txid3 = request.params[0].get_str();
+        txid = request.params[0].get_str();
     }
 
-    CTransactionRef tx1;
-    CTransactionRef tx2;
-    uint256 hash_block1;
-    uint256 hash_block2;
-    uint256 hash_tx1;
-    uint256 hash_tx2;
-    hash_tx1.SetHex(txid1);
-    hash_tx2.SetHex(txid2);
-    g_txindex->FindTx(hash_tx1, hash_block1, tx1);
-    g_txindex->FindTx(hash_tx2, hash_block2, tx2);
+    UniValue varr(UniValue::VARR);
 
-    //CMutableTransaction mTx1;
-    //CMutableTransaction mTx2;
-
-    //DecodeHexTx(mTx1, tx1);
-    //DecodeHexTx(mTx2, tx2);
-
-    RTransaction rtx1(tx1);
-    RTransaction rtx2(tx2);
-
-    UniValue varr1(UniValue::VARR);
-    UniValue varr2(UniValue::VARR);
-    UniValue varr3(UniValue::VARR);
-
-    for (const auto& item : rtx1->vout){
-        CTxDestination destAddress;
-        if(ExtractDestination(item.scriptPubKey, destAddress)){
-            std::string encoded_address = EncodeDestination(destAddress);
-            varr1.push_back(encoded_address);
-        }
-    }
-    result.pushKV("varr1",varr1);
-
-    for (const auto& item : rtx2->vout){
-        CTxDestination destAddress;
-        if(ExtractDestination(item.scriptPubKey, destAddress)){
-            std::string encoded_address = EncodeDestination(destAddress);
-            varr2.push_back(encoded_address);
-        }
-    }
-    result.pushKV("varr2",varr2);
-
-    if(!txid3.empty()){
-        int amount = getdonationamount(txid3);
+    if(!txid.empty()){
+        int amount = getdonationamount(txid);
         if (amount > 0){
-            result.pushKV("txid3_donation", amount);
+            result.pushKV("txid_donation", amount);
         }
     }
 

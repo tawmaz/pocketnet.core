@@ -642,7 +642,7 @@ int getcontenttype(std::string type)
 
 int64_t getdonationamount(std::string txid)
 {
-    int amount = 0;
+    int64_t amount = 0;
     CTransactionRef tx;
     uint256 hash_block;
     uint256 hash_tx;
