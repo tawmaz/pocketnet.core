@@ -1523,7 +1523,10 @@ bool UndoWriteToDisk(const CBlockUndo& blockundo, CDiskBlockPos& pos, const uint
     CBlockUndo blockundo2;
     CAutoFile filein(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
+    {
+        raise(SIGTRAP);
         return error("%s: OpenUndoFile failed", __func__);
+    }
 
     CHashVerifier<CAutoFile> verifier(&filein); // We need a CHashVerifier as reserializing may lose data
     try {

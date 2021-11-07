@@ -1372,6 +1372,7 @@ bool AppInitMain()
     InitSignatureCache();
     InitScriptExecutionCache();
 
+
     LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     if (nScriptCheckThreads) {
         for (int i = 0; i < nScriptCheckThreads - 1; i++)
