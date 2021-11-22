@@ -4,6 +4,7 @@
 
 #include "pocketdb/SQLiteDatabase.h"
 
+
 namespace PocketDb
 {
     static void ErrorLogCallback(void* arg, int code, const char* msg)
@@ -40,6 +41,8 @@ namespace PocketDb
         if (ret != SQLITE_OK)
             throw std::runtime_error(
                 strprintf("%s: %d; Failed to initialize SQLite: %s\n", __func__, ret, sqlite3_errstr(ret)));
+
+        sqlite3_auto_extension((void(*)())sqlite3_spellfix_init);
     }
 
     SQLiteDatabase::SQLiteDatabase(bool readOnly) : isReadOnlyConnect(readOnly)
@@ -133,6 +136,8 @@ namespace PocketDb
         {
             int flags = SQLITE_OPEN_READWRITE |
                         SQLITE_OPEN_CREATE;
+            char* err_msg = NULL;
+            int ret;
 
             if (isReadOnlyConnect)
                 flags = SQLITE_OPEN_READONLY;

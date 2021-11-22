@@ -17,6 +17,17 @@
 #include "pocketdb/migrations/main.h"
 #include "pocketdb/migrations/web.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct sqlite3_api_routines;
+int sqlite3_spellfix_init(sqlite3 *db, char **pzErrMsg, const struct sqlite3_api_routines *pApi);
+
+#ifdef __cplusplus
+};
+#endif
+
 namespace PocketDb
 {
     using namespace std;

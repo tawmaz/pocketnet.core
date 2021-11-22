@@ -61,11 +61,11 @@ namespace PocketConsensus
             auto name = *ptx->GetPayloadName();
 
             // TODO (brangr): enable with fork height
-            // if (name.empty() || name.size() > 35)
-            // {
-            //     if (!CheckpointRepoInst.IsSocialCheckpoint(*ptx->GetHash(), *ptx->GetType(), SocialConsensusResult_NicknameLong))
-            //         return {false, SocialConsensusResult_NicknameLong};
-            // }
+            if (name.empty() || name.size() > 35)
+            {
+                if (!CheckpointRepoInst.IsSocialCheckpoint(*ptx->GetHash(), *ptx->GetType(), SocialConsensusResult_NicknameLong))
+                    return {false, SocialConsensusResult_NicknameLong};
+            }
 
             // Trim spaces
             if (boost::algorithm::ends_with(name, "%20") || boost::algorithm::starts_with(name, "%20"))
