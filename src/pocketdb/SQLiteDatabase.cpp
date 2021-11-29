@@ -167,6 +167,14 @@ namespace PocketDb
                 // if (sqlite3_exec(m_db, "PRAGMA temp_store = memory;", nullptr, nullptr, nullptr) != 0)
                 //     throw std::runtime_error("Failed apply temp_store = memory");
             }
+            if (sqlite3_exec(m_db,
+                "CREATE VIRTUAL TABLE demo USING spellfix1;",
+                0, 0, 0) != 0)
+                throw std::runtime_error("Failed enable spellfix");
+            if (sqlite3_exec(m_db,
+                "INSERT INTO demo(word) SELECT term FROM search_aux WHERE col='*';",
+                0, 0, 0) != 0)
+                throw std::runtime_error("Failed load FTS4");
         }
         catch (const std::runtime_error&)
         {
