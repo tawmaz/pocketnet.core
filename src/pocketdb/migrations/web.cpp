@@ -38,6 +38,19 @@ namespace PocketDb
             );
         )sql");
 
+        // TAWMAZ:
+        _tables.emplace_back(R"sql(
+            create virtual table if not exists Content_v using fts5vocab (Content, row);
+        )sql");
+
+        _tables.emplace_back(R"sql(
+            create virtual table if not exists SpellCheck using spellfix1;
+        )sql");
+
+        //_tables.emplace_back(R"sql(
+        //    insert into SpellCheck(word) select term from Content_v where col='*';
+        //)sql");
+
         _indexes = R"sql(
             create unique index if not exists Tags_Lang_Value on Tags (Lang, Value);
             create index if not exists Tags_Lang_Id on Tags (Lang, Id);
