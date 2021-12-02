@@ -34,22 +34,22 @@ namespace PocketDb
         _tables.emplace_back(R"sql(
             create virtual table if not exists Content using fts5
             (
-                Value
+                Value, tokenize = 'porter unicode61 remove_diacritics 1'
             );
         )sql");
 
         // TAWMAZ:
         _tables.emplace_back(R"sql(
-            create virtual table if not exists Content_v using fts5vocab (Content, row);
+            create virtual table if not exists Content_v using fts5vocab (Content, col);
         )sql");
 
         _tables.emplace_back(R"sql(
             create virtual table if not exists SpellCheck using spellfix1;
         )sql");
 
-        //_tables.emplace_back(R"sql(
-        //    insert into SpellCheck(word) select term from Content_v where col='*';
-        //)sql");
+        _tables.emplace_back(R"sql(
+            insert into SpellCheck(word) select term from Content_v where col='Value';
+        )sql");
 
         _indexes = R"sql(
             create unique index if not exists Tags_Lang_Value on Tags (Lang, Value);
