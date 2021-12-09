@@ -48,7 +48,7 @@ namespace PocketDb
         )sql");
 
         _tables.emplace_back(R"sql(
-            insert into SpellCheck(word) select term from Content_v where col='Value';
+            insert into SpellCheck(word, rank) select term, doc from Content_v where term not in (select word from SpellCheck_vocab);
         )sql");
 
         _indexes = R"sql(

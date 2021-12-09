@@ -271,6 +271,12 @@ namespace PocketDb
                 }
             }
 
+            auto stmtSpellFix = SetupSqlStatement(R"sql(
+                insert into SpellCheck(word, rank) select term, doc from Content_v where term not in (select word from SpellCheck_vocab);
+            )sql");
+
+            TryStepStatement(stmtSpellFix); 
+
             // ---------------------------------------------------------
             int64_t nTime4 = GetTimeMicros();
 
