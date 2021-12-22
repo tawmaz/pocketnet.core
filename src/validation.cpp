@@ -1526,6 +1526,8 @@ void static InvalidChainFound(CBlockIndex* pindexNew) EXCLUSIVE_LOCKS_REQUIRED(c
 
 void CChainState::InvalidBlockFound(CBlockIndex* pindex, const CValidationState& state)
 {
+    AssertLockHeld(cs_main);
+    // TAWMAZ:
     if (!state.CorruptionPossible())
     {
         pindex->nStatus |= BLOCK_FAILED_VALID;
@@ -2911,6 +2913,19 @@ bool CChainState::DisconnectTip(CValidationState& state, const CChainParams& cha
             disconnectpool->removeEntry(it);
         }
     }
+    else
+    {
+        // TAWMAZ
+        for (auto it = block.vtx.rbegin(); it != block.vtx.rend(); ++it)
+        {
+            auto hash = (**it).GetHash();
+            if (PocketDb::TransRepoInst.Exists(hash.GetHex()))
+            {
+                LogPrintf("TAWMAZ: removeRecursive original TX found in DB %s, deleting\n", hash.GetHex());
+                PocketDb::TransRepoInst.CleanTransaction(hash.GetHex());
+            }
+        }
+    }
 
     chainActive.SetTip(pindexDelete->pprev);
 
@@ -3494,6 +3509,7 @@ void CChainState::PrepareWSMessage(std::map<std::string, std::vector<UniValue>>&
  */
 CBlockIndex* CChainState::FindMostWorkChain()
 {
+    AssertLockHeld(cs_main);
     do
     {
         CBlockIndex* pindexNew = nullptr;
@@ -3558,6 +3574,7 @@ CBlockIndex* CChainState::FindMostWorkChain()
 /** Delete all entries in setBlockIndexCandidates that are worse than the current tip. */
 void CChainState::PruneBlockIndexCandidates()
 {
+    AssertLockHeld(cs_main);
     // Note that we can't delete the current block itself, as we may need to return to it later in case a
     // reorganization to a better block fails.
     std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
@@ -4078,6 +4095,7 @@ void CChainState::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pi
                 LOCK(cs_nBlockSequenceId);
                 pindex->nSequenceId = nBlockSequenceId++;
             }
+            AssertLockHeld(cs_main);
             if (chainActive.Tip() == nullptr || !setBlockIndexCandidates.value_comp()(pindex, chainActive.Tip()))
             {
                 setBlockIndexCandidates.insert(pindex);
@@ -4922,7 +4940,7 @@ bool ProcessNewBlock(CValidationState& state,
     const CChainParams& chainparams,
     const std::shared_ptr<const CBlock>& pblock,
     const PocketBlockRef& pocketBlock,
-    bool fForceProcessing, bool fReceived, bool* fNewBlock)
+    bool fForceProcessing, bool* fNewBlock)
 {
     AssertLockNotHeld(cs_main);
 
@@ -5305,6 +5323,7 @@ CBlockIndex* CChainState::InsertBlockIndex(const uint256& hash)
 
 bool CChainState::LoadBlockIndex(const Consensus::Params& consensus_params, CBlockTreeDB& blocktree)
 {
+    AssertLockHeld(cs_main);
     if (!blocktree.LoadBlockIndexGuts(consensus_params, [this](const uint256& hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     {
         return this->InsertBlockIndex(hash);
@@ -5798,6 +5817,7 @@ bool CChainState::RewindBlockIndex(const CChainParams& params)
             // Make sure it gets written.
             setDirtyBlockIndex.insert(pindexIter);
             // Update indexes
+            AssertLockHeld(cs_main);
             setBlockIndexCandidates.erase(pindexIter);
             std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> ret = mapBlocksUnlinked.equal_range(
                 pindexIter->pprev);
@@ -5815,6 +5835,7 @@ bool CChainState::RewindBlockIndex(const CChainParams& params)
         }
         else if (pindexIter->IsValid(BLOCK_VALID_TRANSACTIONS) && pindexIter->nChainTx)
         {
+            AssertLockHeld(cs_main);
             setBlockIndexCandidates.insert(pindexIter);
         }
     }
@@ -6171,12 +6192,10 @@ void CChainState::CheckBlockIndex(const Consensus::Params& consensusParams)
         {
             // Genesis block checks.
             assert(pindex->GetBlockHash() == consensusParams.hashGenesisBlock); // Genesis block's hash must match.
-            assert(pindex ==
-                   chainActive.Genesis());                            // The current active chain's genesis block must be this block.
+            assert(pindex = chainActive.Genesis());  // The current active chain's genesis block must be this block.
         }
         if (pindex->nChainTx == 0)
-            assert(pindex->nSequenceId <=
-                   0); // nSequenceId can't be set positive for blocks that aren't linked (negative is used for preciousblock)
+            assert(pindex->nSequenceId <= 0); // nSequenceId can't be set positive for blocks that aren't linked (negative is used for preciousblock)
         // VALID_TRANSACTIONS is equivalent to nTx > 0 for all nodes (whether or not pruning has occurred).
         // HAVE_DATA is only equivalent to nTx > 0 (or VALID_TRANSACTIONS) if no pruning has occurred.
         if (!fHavePruned)
@@ -6227,6 +6246,7 @@ void CChainState::CheckBlockIndex(const Consensus::Params& consensusParams)
                 // even if some data has been pruned.
                 if (pindexFirstMissing == nullptr || pindex == chainActive.Tip())
                 {
+                        AssertLockHeld(cs_main);
                     assert(setBlockIndexCandidates.count(pindex));
                 }
                 // If some parent is missing, then it could be that this block was in
@@ -6402,6 +6422,9 @@ bool LoadMempool()
 
         uint64_t num;
         file >> num;
+
+        LOCK(cs_main);
+
         while (num--)
         {
             CTransactionRef tx;
@@ -6424,7 +6447,7 @@ bool LoadMempool()
 
                 if (state.IsValid())
                 {
-                    LOCK(cs_main);
+
                     AcceptToMemoryPoolWithTime(chainparams, mempool, state, tx, pocketTx, nullptr /* pfMissingInputs */,
                         nTime,
                         nullptr /* plTxnReplaced */, false /* bypass_limits */, 0 /* nAbsurdFee */,
@@ -6466,7 +6489,10 @@ bool LoadMempool()
             mempool.PrioritiseTransaction(i.first, i.second);
 
         // Also remove from sqlite db
-        mempool.CleanSQLite(expiredHashes, "init", MemPoolRemovalReason::EXPIRY);
+        {
+            LOCK(mempool.cs);
+            mempool.CleanSQLite(expiredHashes, MemPoolRemovalReason::EXPIRY);
+        }
     }
     catch (const std::exception& e)
     {

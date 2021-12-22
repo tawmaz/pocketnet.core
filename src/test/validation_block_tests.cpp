@@ -14,7 +14,7 @@
 #include <validation.h>
 #include <validationinterface.h>
 
-#include "pocketdb/services/Accessor.hpp"
+#include "pocketdb/services/Serializer.h"
 
 struct RegtestingSetup : public TestingSetup {
     RegtestingSetup() : TestingSetup(CBaseChainParams::REGTEST) {}
@@ -121,6 +121,8 @@ void BuildChain(const uint256& root, int height, const unsigned int invalid_rate
     }
 }
 
+// Currently disabled 
+#ifdef DISABLED_TEST
 BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
 {
     // build a large-ish chain that's likely to have some forks
@@ -139,16 +141,13 @@ BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
     BOOST_CHECK(ProcessNewBlockHeaders(headers, state, Params()));
 
     // Connect the genesis block and drain any outstanding events
-    ProcessNewBlock(Params(), std::make_shared<CBlock>(Params().GenesisBlock()), true, &ignored);
-
     CBlock& block = const_cast<CBlock&>(Params().GenesisBlock());
 
-    auto[deserializeOk, pocketBlock] = PocketServices::TransactionSerializer::DeserializeBlock(block);
+    auto[deserializeOk, pocketBlock] = PocketServices::Serializer::DeserializeBlock(block);
     BOOST_CHECK(deserializeOk);
-
     auto pocketBlockRef = std::make_shared<PocketBlock>(pocketBlock);
  
-    ProcessNewBlock(state, Params(), std::make_shared<CBlock>(block), pocketBlockRef, true, true, &ignored);
+    BOOST_CHECK(ProcessNewBlock(state, Params(), std::make_shared<CBlock>(block), pocketBlockRef, true, &ignored));
 
     SyncWithValidationInterfaceQueue();
 
@@ -164,38 +163,40 @@ BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
     // create a bunch of threads that repeatedly process a block generated above at random
     // this will create parallelism and randomness inside validation - the ValidationInterface
     // will subscribe to events generated during block validation and assert on ordering invariance
-    boost::thread_group threads;
+    std::vector<std::thread> threads;
 
     for (int i = 0; i < 10; i++) {
-        threads.create_thread([&blocks]() {
+        threads.emplace_back([&blocks]() {
             bool ignored;
             CValidationState state;
 
             for (int i = 0; i < 1000; i++) {
                 auto block = blocks[GetRand(blocks.size() - 1)];
-                auto[deserializeOk, pocketBlock] = PocketServices::TransactionSerializer::DeserializeBlock(block);
+                auto[deserializeOk, pocketBlock] = PocketServices::Serializer::DeserializeBlock(*block);
                 assert(deserializeOk);
 
                 auto pocketBlockRef = std::make_shared<PocketBlock>(pocketBlock);
-                ProcessNewBlock(state, Params(), block, pocketBlockRef, true, true, &ignored);
+                ProcessNewBlock(state, Params(), block, pocketBlockRef, true, &ignored);
             }
 
             // to make sure that eventually we process the full chain - do it here
             for (auto block : blocks) {
                 if (block->vtx.size() == 1) {
-                    auto[deserializeOk, pocketBlock] = PocketServices::TransactionSerializer::DeserializeBlock(block);
+                    auto[deserializeOk, pocketBlock] = PocketServices::Serializer::DeserializeBlock(*block);
                     assert(deserializeOk);
 
                     auto pocketBlockRef = std::make_shared<PocketBlock>(pocketBlock);
 
-                    bool processed = ProcessNewBlock(state, Params(), block, pocketBlockRef, true, true, &ignored);
+                    bool processed = ProcessNewBlock(state, Params(), block, pocketBlockRef, true, &ignored);
                     assert(processed);
                 }
             }
         });
     }
 
-    threads.join_all();
+    for (auto& t : threads) {
+        t.join();
+    }
     while (GetMainSignals().CallbacksPending() > 0) {
         MilliSleep(100);
     }
@@ -204,5 +205,6 @@ BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
 
     BOOST_CHECK_EQUAL(sub.m_expected_tip, chainActive.Tip()->GetBlockHash());
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()

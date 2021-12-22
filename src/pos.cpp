@@ -154,7 +154,7 @@ bool CheckStake(const std::shared_ptr<CBlock> pblock, const PocketBlockRef& pock
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(state, chainparams, pblock, pocketBlock, true, /* fReceived */ false, NULL))
+    if (!ProcessNewBlock(state, chainparams, pblock, pocketBlock, true,  NULL))
     {
         return error("CoinStaker: ProcessNewBlock, block not accepted %s", state.GetRejectReason());
     }

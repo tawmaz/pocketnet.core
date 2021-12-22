@@ -66,7 +66,7 @@ static CTxIn MineBlock(const CScript& coinbase_scriptPubKey)
     bool ignored;
     auto[deserializeOk, pocketBlock] = PocketServices::Serializer::DeserializeBlock(*block);
     auto pocketBlockRef = std::make_shared<PocketBlock>(pocketBlock);
-    bool processed{ProcessNewBlock(state, Params(), block, pocketBlockRef, true, true, &ignored)};
+    bool processed{ProcessNewBlock(state, Params(), block, pocketBlockRef, true, &ignored)};
     assert(processed);
 
     return CTxIn{block->vtx[0]->GetHash(), 0};

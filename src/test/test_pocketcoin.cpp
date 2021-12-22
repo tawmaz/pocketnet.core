@@ -7,6 +7,7 @@
 #include <chainparams.h>
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
+#include <consensus/merkle.h>
 #include <crypto/sha256.h>
 #include <miner.h>
 #include <net_processing.h>
@@ -19,6 +20,7 @@
 #include <validation.h>
 #include "httpserver.h"
 #include <init.h>
+#include <index/txindex.h>
 #include "pocketdb/helpers/TransactionHelper.h"
 
 using namespace PocketHelpers;
@@ -102,8 +104,10 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
 
     // We have to run a scheduler thread to prevent ActivateBestChain
     // from blocking due to queue overrun.
-    threadGroup.create_thread(boost::bind(&CScheduler::serviceQueue, &scheduler));
+    CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
+    threadGroup.create_thread(boost::bind(&TraceThread < CScheduler::Function > , "scheduler", serviceLoop));
     GetMainSignals().RegisterBackgroundSignalScheduler(scheduler);
+    GetMainSignals().RegisterWithMempoolSignals(mempool);
 
     mempool.setSanityCheck(1.0);
     pblocktree.reset(new CBlockTreeDB(1 << 20, true));
@@ -124,21 +128,34 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
     g_connman = MakeUnique<CConnman>(0x1337, 0x1337); // Deterministic randomness for tests.
     connman = g_connman.get();
     peerLogic.reset(new PeerLogicValidation(connman, scheduler, /*enable_bip61=*/true));
+
+    g_txindex = MakeUnique<TxIndex>(0, false, IsChainReindex());
+    g_txindex->Start();
 }
 
 TestingSetup::~TestingSetup()
 {
+    if (g_txindex) g_txindex->Stop();
     threadGroup.interrupt_all();
     threadGroup.join_all();
-    GetMainSignals().FlushBackgroundCallbacks();
-    GetMainSignals().UnregisterBackgroundSignalScheduler();
+
     g_connman.reset();
     peerLogic.reset();
-    UnloadBlockIndex();
+    g_txindex.reset();
+
+    GetMainSignals().FlushBackgroundCallbacks();
+
     pcoinsTip.reset();
     pcoinsdbview.reset();
     pblocktree.reset();
+
     ShutdownPocketServices();
+
+    UnregisterAllValidationInterfaces();
+    GetMainSignals().UnregisterBackgroundSignalScheduler();
+    GetMainSignals().UnregisterWithMempoolSignals(mempool);
+    UnloadBlockIndex();
+
     PocketDb::SQLiteDbInst.Cleanup();
 }
 
@@ -169,28 +186,35 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     std::unique_ptr<CBlockTemplate> pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey);
     CBlock& block = pblocktemplate->block;
 
+    // block.nTime = ::chainActive.Tip()->GetMedianTimePast() + 1;
+
     // Replace mempool-selected txns with just coinbase plus passed-in txns:
-    block.vtx.resize(1);
-    for (const CMutableTransaction& tx : txns)
-        block.vtx.push_back(MakeTransactionRef(tx));
+    if (!txns.empty())
+    {
+        block.vtx.resize(1);
+        for (const CMutableTransaction& tx : txns)
+            block.vtx.push_back(MakeTransactionRef(tx));
+    }
     // IncrementExtraNonce creates a valid coinbase and merkleRoot
     {
         LOCK(cs_main);
         unsigned int extraNonce = 0;
         IncrementExtraNonce(&block, chainActive.Tip(), extraNonce);
     }
+    block.hashMerkleRoot = BlockMerkleRoot(block);
 
     while (!CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus(), chainActive.Height())) ++block.nNonce;
 
-    std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(block);
+    auto[deserializeOk, pocketBlock] = PocketServices::Serializer::DeserializeBlock(block);
+    assert(deserializeOk);
+
     CValidationState state;
-    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
-    //auto pocketBlockRef = std::make_shared<PocketBlock>(pblocktemplate->pocketBlock);
+    auto pocketBlockRef = std::make_shared<PocketBlock>(pocketBlock);
     bool fNewBlock = false;
  
-    //ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, true, true, &fNewBlock);
-    CBlock result = block;
-    return result;
+    bool ret = ProcessNewBlock(state, chainparams, std::make_shared<CBlock>(block), pocketBlockRef, true, &fNewBlock);
+
+    return block;
 }
 
 TestChain100Setup::~TestChain100Setup()

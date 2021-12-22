@@ -29,7 +29,6 @@ static constexpr int64_t DEFAULT_MIN_TIME_MS{10};
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 static std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
 
-// TAWMAZ:
 static void SetupHelpOptions(ArgsManager& args)
 {
     args.AddArg("-?", "Print this help message and exit", false, OptionsCategory::OPTIONS);

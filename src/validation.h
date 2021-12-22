@@ -265,7 +265,7 @@ bool ProcessNewBlock(CValidationState& state,
     const CChainParams& chainparams,
     const std::shared_ptr<const CBlock>& pblock,
     const PocketHelpers::PocketBlockRef& pocketBlock,
-    bool fForceProcessing, bool fReceived, bool* fNewBlock) LOCKS_EXCLUDED(cs_main);
+    bool fForceProcessing, bool* fNewBlock) LOCKS_EXCLUDED(cs_main);
 
 /**
  * Process incoming block headers.

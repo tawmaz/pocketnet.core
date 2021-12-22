@@ -303,6 +303,8 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries& packa
 bool BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
 {
     pblock->vtx.emplace_back(iter->GetSharedTx());
+    auto tx = iter->GetSharedTx();
+    cout << "AddToBlock tx = " << tx->GetHash().GetHex() << " vout hash = " << tx->vin[0].prevout.hash.GetHex() << "\n";
     pblocktemplate->vTxFees.push_back(iter->GetFee());
     pblocktemplate->vTxSigOpsCost.push_back(iter->GetSigOpCost());
     nBlockWeight += iter->GetTxWeight();
@@ -479,6 +481,7 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
         }
 
         CTransactionRef tx = iter->GetSharedTx();
+        cout << "addPackageTxs tx = " << tx->GetHash().GetHex() << " vout hash = " << tx->vin[0].prevout.hash.GetHex() << "\n";
         if (!TestPackage(packageSize, packageSigOpsCost))
         {
             if (fUsingModified)

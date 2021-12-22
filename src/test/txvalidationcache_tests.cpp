@@ -16,6 +16,7 @@
 #include <core_io.h>
 #include <keystore.h>
 #include <policy/policy.h>
+#include "pocketdb/services/Serializer.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -28,9 +29,15 @@ ToMemPool(const CMutableTransaction& tx)
 {
     LOCK(cs_main);
 
+    auto transaction = new CTransaction(tx);
+    CTransactionRef txref(transaction);
+
+    auto[ok, pocketTx] = PocketServices::Serializer::DeserializeTransaction(txref);
+    BOOST_CHECK(ok);
+
     CValidationState state;
     return AcceptToMemoryPool(mempool, state, MakeTransactionRef(tx), 
-                              nullptr /* pocketTx */,
+                              pocketTx /* pocketTx */,
                               nullptr /* pfMissingInputs */,
                               nullptr /* plTxnReplaced */,
                               true /* bypass_limits */,
@@ -72,7 +79,7 @@ BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
     // Test 1: block with both of those transactions should be rejected.
     block = CreateAndProcessBlock(spends, scriptPubKey);
     BOOST_CHECK(chainActive.Tip()->GetBlockHash() != block.GetHash());
-
+     
     // Test 2: ... and should be rejected if spend1 is in the memory pool
     BOOST_CHECK(ToMemPool(spends[0]));
     block = CreateAndProcessBlock(spends, scriptPubKey);

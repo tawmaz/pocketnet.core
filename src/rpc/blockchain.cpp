@@ -1066,6 +1066,43 @@ static UniValue verifychain(const JSONRPCRequest& request)
     return CVerifyDB().VerifyDB(Params(), pcoinsTip.get(), nCheckLevel, nCheckDepth);
 }
 
+static UniValue verifydb(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "verifydb\n"
+            "\nReturns TX hashes which are in the SQLite db but not in the blockchain.\n"
+            "\nResult:\n"
+            "n    (numeric) The current block count\n"
+            "\nExamples:\n" +
+            HelpExampleCli("verifydb", "") + HelpExampleRpc("verifydb", ""));
+
+    //UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VARR);
+    uint256 tx_hash;
+    uint256 block_hash;
+    CTransactionRef tx = nullptr;
+
+    LOCK(cs_main);
+    LOCK(mempool.cs);
+    auto hashes = PocketDb::ChainRepoInst.GetTransactionHashes();
+
+    for (auto &hash : hashes)
+    {
+        // Make sure each transaction exists in either the blockchain or the mempool
+        tx_hash = uint256S(hash);
+        if (!GetTransaction(tx_hash, tx, Params().GetConsensus(), block_hash, true))
+        {
+            LogPrintf("TAWMAZ: orphan transaction hash = %s, block = %s\n", hash, block_hash.ToString());
+            PocketDb::TransRepoInst.CleanTransaction(hash);
+            result.push_back(tx_hash.ToString());
+        }
+    }
+    LogPrintf("TAWMAZ: result = %s\n", result.write());
+
+    return result;
+}
+
 /** Implementation of IsSuperMajority with better feedback */
 static UniValue SoftForkMajorityDesc(int version, CBlockIndex* pindex, const Consensus::Params& consensusParams)
 {
@@ -2173,6 +2210,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getblockstats",          &getblockstats,          {"hash_or_height", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       {} },
     { "blockchain",         "getblockcount",          &getblockcount,          {} },
+    { "blockchain",         "verifydb",               &verifydb,               {} },
     { "blockchain",         "getblock",               &getblock,               {"blockhash","verbosity|verbose"} },
     { "blockchain",         "getblockhash",           &getblockhash,           {"height"} },
     { "blockchain",         "getblockheader",         &getblockheader,         {"blockhash","verbose"} },

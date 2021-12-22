@@ -2783,7 +2783,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // reconstructed compact blocks as having been requested.
             bool fNewBlock = false;
             CValidationState state;
-            ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, /*fForceProcessing=*/true, /* fReceived */ true, &fNewBlock);
+            ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, /*fForceProcessing=*/true, &fNewBlock);
             if (fNewBlock) {
                 pfrom->nLastBlockTime = GetTime();
             } else {
@@ -2871,7 +2871,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // protections in the compact block handler -- see related comment
             // in compact block optimistic reconstruction handling.
             CValidationState state;
-            ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, /*fForceProcessing=*/true, /* fReceived */ true, &fNewBlock);
+            ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, /*fForceProcessing=*/true, &fNewBlock);
             if (fNewBlock) {
                 pfrom->nLastBlockTime = GetTime();
             } else {
@@ -2933,7 +2933,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         bool fNewBlock = false;
         CValidationState state;
-        ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, forceProcessing, /* fReceived */ true, &fNewBlock);
+        ProcessNewBlock(state, chainparams, pblock, pocketBlockRef, forceProcessing, &fNewBlock);
         if (fNewBlock) {
             pfrom->nLastBlockTime = GetTime();
         } else {
