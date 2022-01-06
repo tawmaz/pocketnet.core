@@ -1,20 +1,42 @@
-name: C/C++ CI
+name: make check
 
 on:
   push:
     branches: [ feature/sqlite ]
   pull_request:
     branches: [ feature/sqlite ]
+   workflow_dispatch:
 
-workflow_dispatch:
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Show environment v1
+        run: env | grep ^GITHUB
+      - name: Show ref v1
+        run: echo "===============> Version from $GITHUB_REF"
+      - name: Install jq tool
+        run: |
+          sudo apt-get update
+          sudo apt-get install jq
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
+    - name: ls
+      run: ls -al
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3 libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-test-dev libboost-thread-dev
     - name: autogen
       run: ./autogen.sh
     - name: configure
