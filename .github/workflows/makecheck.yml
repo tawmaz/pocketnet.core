@@ -10,17 +10,18 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
 
     steps:
     - uses: actions/checkout@v2
     - name: apt update
       run: sudo apt-get update
     - name: install libdb
-      run: sudo apt-get install libdb-dev libdb++-dev
+      run: sudo apt-get install libdb4.8-dev libdb4.8++-dev
+    - name: install boost
+      run: sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-test-dev libboost-thread-dev
     - name: Install dependencies
-      run: |
-        sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3 libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-test-dev libboost-thread-dev
+      run: sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3 
     - name: autogen
       run: ./autogen.sh --enable-tests
     - name: configure
