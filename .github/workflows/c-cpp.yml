@@ -1,0 +1,25 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ feature/sqlite ]
+  pull_request:
+    branches: [ feature/sqlite ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure --with-incompatible-bdb
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make deploy
+      run: make deploy
