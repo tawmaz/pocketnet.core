@@ -3,9 +3,9 @@ name: make check
 on:
   workflow_dispatch:
   push:
-    branches: [ feature/sqlite ]
+    branches: [ feature/sqlite, $default-branch ]
   pull_request:
-    branches: [ feature/sqlite ]
+    branches: [ feature/sqlite, $default-branch ]
 
 jobs:
   build:
