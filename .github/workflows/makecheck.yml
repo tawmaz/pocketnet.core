@@ -17,7 +17,7 @@ jobs:
     - name: apt update
       run: sudo apt-get update
     - name: install libdb
-      run: sudo apt-get install lib5.3-dev libdb5.3++-dev
+      run: sudo apt-get install libdb-dev libdb++-dev
     - name: Install dependencies
       run: |
         sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3 libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-test-dev libboost-thread-dev
