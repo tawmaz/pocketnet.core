@@ -17,7 +17,7 @@ jobs:
     - name: apt update
       run: sudo apt-get update
     - name: install libdb
-      run: sudo apt-get install libdb4.8-dev libdb4.8++-dev
+      run: sudo apt-get install libdb-dev libdb++-dev
     - name: install boost
       run: sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-test-dev libboost-thread-dev
     - name: Install dependencies
