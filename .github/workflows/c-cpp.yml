@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ feature/sqlite ]
 
+workflow_dispatch:
+
 jobs:
   build:
 
