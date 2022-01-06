@@ -22,11 +22,11 @@ jobs:
       run: |
         sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3 libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-test-dev libboost-thread-dev
     - name: autogen
-      run: ./autogen.sh
+      run: ./autogen.sh --enable-tests
     - name: configure
-      run: ./configure --with-incompatible-bdb
+      run: ./configure --with-incompatible-bdb --enable-tests
     - name: make
-      run: make
+      run: make -j8
     - name: make check
       run: make check
     - name: make deploy
