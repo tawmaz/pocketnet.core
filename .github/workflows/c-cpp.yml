@@ -1,28 +1,11 @@
 name: make check
 
 on:
+  workflow_dispatch:
   push:
     branches: [ feature/sqlite ]
   pull_request:
     branches: [ feature/sqlite ]
-   workflow_dispatch:
-
-
-on:
-  workflow_dispatch:
-
-jobs:
-  test:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Show environment v1
-        run: env | grep ^GITHUB
-      - name: Show ref v1
-        run: echo "===============> Version from $GITHUB_REF"
-      - name: Install jq tool
-        run: |
-          sudo apt-get update
-          sudo apt-get install jq
 
 jobs:
   build:
