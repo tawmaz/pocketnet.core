@@ -616,8 +616,11 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
+    // TAWMAZ: this check is disabled to allow locktime delayed transactions:
+#if DISABLE_LOCKTIME
     if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
         return state.Invalid(TxValidationResult::TX_PREMATURE_SPEND, "non-final");
+#endif
 
     // is it already in the memory pool?
     if (m_pool.exists(hash)) {
